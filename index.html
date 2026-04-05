@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -13,14 +14,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         /* === リセット・基本設定 === */
-        *, *::before, *::after {
+        *,
+        *::before,
+        *::after {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             -webkit-tap-highlight-color: transparent;
         }
 
-        html, body {
+        html,
+        body {
             height: 100%;
             overflow: hidden;
             touch-action: manipulation;
@@ -34,7 +38,8 @@
         #app {
             display: flex;
             flex-direction: column;
-            height: 100dvh; /* dynamic viewport height */
+            height: 100dvh;
+            /* dynamic viewport height */
             max-width: 480px;
             margin: 0 auto;
             background: #FFFFFF;
@@ -102,10 +107,18 @@
             gap: 8px;
         }
 
-        /* バーコードサイズ: 45mm × 7mm（cardappと同じ物理サイズ） */
+        /*
+         * バーコードサイズ: 45mm × 7mm（cardappと同じ物理サイズ）
+         * 元アプリの計算方式: MM_TO_DP = 160 / 25.4
+         *   幅: 45.0mm × (160/25.4) ≈ 283px
+         *   高さ: 7.0mm × (160/25.4) ≈ 44px
+         * CSS px はデバイス非依存ピクセル (dp) と等価のため、
+         * どのスマートフォンでも同じ物理サイズで表示される。
+         */
         .barcode-wrapper svg {
-            width: 45mm;
-            height: 7mm;
+            width: 283px;
+            height: 44px;
+            display: block;
         }
 
         .barcode-value-text {
@@ -273,13 +286,15 @@
         }
     </style>
 </head>
+
 <body>
     <div id="app">
         <!-- ヘッダー -->
         <div class="header">
             <div class="header-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M80 96v320M160 96v320M240 96v320M320 96v320M400 96v320M448 96v320M64 96v320"/>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" stroke="currentColor"
+                    stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M80 96v320M160 96v320M240 96v320M320 96v320M400 96v320M448 96v320M64 96v320" />
                 </svg>
             </div>
             <span class="header-title">アゴラコード</span>
@@ -297,10 +312,11 @@
             </div>
 
             <div class="notice">
-                <svg class="notice-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="256" cy="256" r="208"/>
-                    <path d="M256 176v144"/>
-                    <circle cx="256" cy="384" r="8" fill="currentColor"/>
+                <svg class="notice-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none"
+                    stroke="currentColor" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="256" cy="256" r="208" />
+                    <path d="M256 176v144" />
+                    <circle cx="256" cy="384" r="8" fill="currentColor" />
                 </svg>
                 <span class="notice-text">
                     Web版のため、明るさの自動調整機能はありません。<br>
@@ -340,10 +356,12 @@
                     <button class="key-btn empty"></button>
                     <button class="key-btn" data-digit="0">0</button>
                     <button class="key-btn delete" id="deleteBtn" aria-label="削除">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M135.19 390.14a28.79 28.79 0 0021.68 9.86h246.26A29 29 0 00432 371.13V140.87A29 29 0 00403.13 112H156.87a28.84 28.84 0 00-21.67 9.84L46.33 256z"/>
-                            <line x1="336" y1="176" x2="224" y2="336"/>
-                            <line x1="224" y1="176" x2="336" y2="336"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" stroke="currentColor"
+                            stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M135.19 390.14a28.79 28.79 0 0021.68 9.86h246.26A29 29 0 00432 371.13V140.87A29 29 0 00403.13 112H156.87a28.84 28.84 0 00-21.67 9.84L46.33 256z" />
+                            <line x1="336" y1="176" x2="224" y2="336" />
+                            <line x1="224" y1="176" x2="336" y2="336" />
                         </svg>
                     </button>
                 </div>
@@ -419,6 +437,19 @@
                     margin: 0,
                     background: 'transparent',
                 });
+
+                // JsBarcodeが設定するwidth/height属性を除去し、
+                // viewBoxによるスケーリングでCSSサイズ（283×44px）に従わせる
+                const svg = document.getElementById('barcodeSvg');
+                const w = svg.getAttribute('width');
+                const h = svg.getAttribute('height');
+                if (w && h) {
+                    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+                    svg.removeAttribute('width');
+                    svg.removeAttribute('height');
+                    svg.setAttribute('preserveAspectRatio', 'none');
+                }
+
                 barcodeValueText.textContent = barcodeValue;
             } catch (e) {
                 console.error('バーコード生成エラー:', e);
@@ -501,4 +532,5 @@
         updateUI();
     </script>
 </body>
+
 </html>
