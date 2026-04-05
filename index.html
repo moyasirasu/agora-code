@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -6,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="アゴラコード - 学籍番号からバーコードを生成するWebアプリ">
     <title>アゴラコード</title>
-    <!-- JsBarcode CDN -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -39,7 +36,6 @@
             display: flex;
             flex-direction: column;
             height: 100dvh;
-            /* dynamic viewport height */
             max-width: 480px;
             margin: 0 auto;
             background: #FFFFFF;
@@ -86,6 +82,12 @@
             justify-content: flex-start;
             overflow-y: auto;
             min-height: 0;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+
+        .content::-webkit-scrollbar {
+            display: none; /* Chrome/Safari/Edge */
         }
 
         .barcode-container {
@@ -109,18 +111,11 @@
             gap: 8px;
         }
 
-        /*
-         * バーコードサイズ: 45mm × 7mm（cardappと同じ物理サイズ）
-         * 元アプリの計算方式: MM_TO_DP = 160 / 25.4
-         *   幅: 45.0mm × (160/25.4) ≈ 283px
-         *   高さ: 7.0mm × (160/25.4) ≈ 44px
-         * CSS px はデバイス非依存ピクセル (dp) と等価のため、
-         * どのスマートフォンでも同じ物理サイズで表示される。
-         */
         .barcode-wrapper svg {
             width: 283px;
             height: 44px;
             display: block;
+            margin: 0 auto; /* 確実な中央揃えのために追加 */
         }
 
         .barcode-value-text {
@@ -291,7 +286,6 @@
 
 <body>
     <div id="app">
-        <!-- ヘッダー -->
         <div class="header">
             <div class="header-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" stroke="currentColor"
@@ -302,10 +296,8 @@
             <span class="header-title">アゴラコード</span>
         </div>
 
-        <!-- コンテンツエリア -->
         <div class="content">
             <div class="barcode-container" id="barcodeContainer">
-                <!-- バーコードまたはプレースホルダーがここに表示 -->
                 <span class="placeholder-text" id="placeholder">ここにバーコードが表示されます</span>
                 <div class="barcode-wrapper" id="barcodeWrapper" style="display:none;">
                     <svg id="barcodeSvg"></svg>
@@ -327,9 +319,7 @@
             </div>
         </div>
 
-        <!-- 下部コントロール -->
         <div class="bottom-controls">
-            <!-- 入力表示 -->
             <div class="input-display" id="inputDisplay">
                 <div class="input-label">学籍番号 (7桁)</div>
                 <div class="input-field">
@@ -337,7 +327,6 @@
                 </div>
             </div>
 
-            <!-- テンキー -->
             <div class="keypad">
                 <div class="keypad-row">
                     <button class="key-btn" data-digit="1">1</button>
@@ -369,7 +358,6 @@
                 </div>
             </div>
 
-            <!-- 作成ボタン -->
             <button class="create-btn disabled" id="createBtn" disabled>バーコードを作成</button>
         </div>
     </div>
@@ -432,6 +420,11 @@
             const barcodeValue = 'a' + studentId + '0a';
             isGenerated = true;
 
+            // 前回の描画内容や属性をクリアして初期化（ズレ防止）
+            barcodeSvg.innerHTML = '';
+            barcodeSvg.removeAttribute('viewBox');
+            barcodeSvg.removeAttribute('preserveAspectRatio');
+
             try {
                 JsBarcode('#barcodeSvg', barcodeValue, {
                     format: 'codabar',
@@ -440,16 +433,16 @@
                     background: 'transparent',
                 });
 
-                // JsBarcodeが設定するwidth/height属性を除去し、
-                // viewBoxによるスケーリングでCSSサイズ（283×44px）に従わせる
-                const svg = document.getElementById('barcodeSvg');
-                const w = svg.getAttribute('width');
-                const h = svg.getAttribute('height');
-                if (w && h) {
-                    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-                    svg.removeAttribute('width');
-                    svg.removeAttribute('height');
-                    svg.setAttribute('preserveAspectRatio', 'none');
+                // parseFloatを使用して確実に数値のみを抽出する
+                // これにより、単位付きの無効なviewBoxが生成されるのを防ぐ
+                const w = parseFloat(barcodeSvg.getAttribute('width'));
+                const h = parseFloat(barcodeSvg.getAttribute('height'));
+
+                if (!isNaN(w) && !isNaN(h)) {
+                    barcodeSvg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+                    barcodeSvg.removeAttribute('width');
+                    barcodeSvg.removeAttribute('height');
+                    barcodeSvg.setAttribute('preserveAspectRatio', 'none');
                 }
 
                 barcodeValueText.textContent = barcodeValue;
@@ -463,7 +456,6 @@
         // === 数字入力ハンドラ ===
         function handleDigit(digit) {
             if (isGenerated) {
-                // バーコード表示中に入力 → リセットして新しい入力開始
                 isGenerated = false;
                 studentId = digit;
             } else {
@@ -493,18 +485,14 @@
         }
 
         // === イベント登録 ===
-
-        // テンキーのボタンイベント
         document.querySelectorAll('.key-btn[data-digit]').forEach(btn => {
             btn.addEventListener('click', () => {
                 handleDigit(btn.dataset.digit);
             });
         });
 
-        // 削除ボタン
         deleteBtn.addEventListener('click', handleDelete);
 
-        // 長押し削除
         let longPressTimer = null;
         deleteBtn.addEventListener('touchstart', (e) => {
             longPressTimer = setTimeout(() => {
@@ -527,10 +515,8 @@
             }
         });
 
-        // 作成ボタン
         createBtn.addEventListener('click', generateBarcode);
 
-        // 初期UI
         updateUI();
     </script>
 </body>
